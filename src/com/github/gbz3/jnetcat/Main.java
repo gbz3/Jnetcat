@@ -62,10 +62,12 @@ public class Main {
 		final CommandLine cl = new GnuParser().parse( opts, args );
 
 		if( cl.hasOption( OPT_h ) ) {
+			// Jnetcat -l
 			new HelpFormatter().printHelp( "Jnetcat [ -h ] [ -l listenPort [ listenAddr ] ] ", opts );
 			return null;
 
 		} else if( cl.hasOption( OPT_l ) ) {
+			// Jnetcat -l listenPort [ bindAddr ]
 			if( 2 <= cl.getArgs().length ) throw new IllegalArgumentException( "too much parameters for '-l'" );
 
 			// Check listen port
@@ -74,17 +76,7 @@ public class Main {
 
 			// Check bind address (optional)
 			if( cl.getArgs().length == 1 ) {
-				final String[] b = cl.getArgs()[0].split( "\\." );
-				if( b.length != 4 ) {
-					System.err.println( "bindAddr is not InetAddress format." );
-					return null;
-				}
-//				for( int i = 0; i < 4; i++ ) {
-//					if( b[i] < 0 || 255 < b[i] ) {
-//
-//					}
-//				}
-				final InetAddress bindAddr = InetAddress.getByName( cl.getArgs()[1] );
+				final InetAddress bindAddr = parseInetAddress( cl.getArgs()[0].trim(), "bindAddr" );
 				log.debug( "bindAddr=[{}]", bindAddr );
 				return DataReceiverConfig.getInstance( listenPort, bindAddr );
 			}
@@ -92,10 +84,25 @@ public class Main {
 			return DataReceiverConfig.getInstance( listenPort );
 
 		} else if( cl.getArgs().length == 2 ) {
-			return DataSenderConfig.getInstance();
+			// Jnetcat targetAddr targetPort
+			final InetAddress targetAddr = parseInetAddress( cl.getArgs()[0].trim(), "targetAddr" );
+			final int targetPort = Integer.parseInt( cl.getArgs()[1].trim() );
+			if( targetPort < 1 || 65535 < targetPort ) throw new IllegalArgumentException( "targetPort range ( 1-65535 ): listenPort=" + targetPort );
+			return DataSenderConfig.getInstance( targetAddr, targetPort );
 		}
 
 		throw new IllegalArgumentException( "invalid parameter." + cl.getArgList() );
+	}
+
+	private static InetAddress parseInetAddress( String obj, String msg ) throws UnknownHostException {
+		if( obj == null || "".equals( obj ) ) throw new IllegalArgumentException( msg + " is not InetAddress format. " + msg + "=" + obj );
+		final String[] b = obj.split( "\\." );
+		if( b.length != 4 ) throw new IllegalArgumentException( msg + " is not InetAddress format. " + msg + "=" + obj );
+		for( int i = 0; i < 4; i++ ) {
+			final int buff = Integer.parseInt( b[i] );
+			if( buff < 0 || 255 < buff ) throw new IllegalArgumentException( msg + " is not InetAddress format. " + msg + "=" + obj );
+		}
+		return InetAddress.getByName( obj );
 	}
 
 }

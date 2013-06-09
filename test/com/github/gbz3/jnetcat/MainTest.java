@@ -27,7 +27,7 @@ public class MainTest {
 	}
 
 	@Test
-	public void testParamCombination() throws Exception {
+	public void test() throws Exception {
 		// none
 		assertThrown( "no param", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{} ); }} );
 		assertThrown( "no param", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ null } ); }} );
@@ -35,41 +35,82 @@ public class MainTest {
 		assertThrown( "no param", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-" } ); }} );
 		assertThrown( "no param", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--" } ); }} );
 		assertThrown( "no param", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "---" } ); }} );
+	}
 
-		// single - '-h'
+	@Test
+	public void testHelp() throws Exception {
+		// '-h'
 		assertEquals( "-h", null, Main.parseCommandLine( Main.getOptions(), new String[]{ "-h" } ) );
 		assertEquals( "-h", null, Main.parseCommandLine( Main.getOptions(), new String[]{ "--h" } ) );
+
 		assertThrown( "-h", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--help" } ); }} );
 		assertThrown( "-h", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-H" } ); }} );
 		assertThrown( "-h", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--H" } ); }} );
+	}
 
-		// single - '-l'
-		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "-1" } ); }} );
-		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "0" } ); }} );
+	@Test
+	public void testReceiver() throws Exception {
+		// '-l'
 		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1" } ) instanceof DataReceiverConfig );
 		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "65535" } ) instanceof DataReceiverConfig );
+		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "1" } ) instanceof DataReceiverConfig );
+		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "65535" } ) instanceof DataReceiverConfig );
+
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "-1" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "0" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "65536" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "-1" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "0" } ); }} );
-		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "1" } ) instanceof DataReceiverConfig );
-		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "65535" } ) instanceof DataReceiverConfig );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--l", "65536" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--listen" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-L" } ); }} );
 		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "--L" } ); }} );
 
-		// one - success
-		assertTrue( Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "1234" } ) instanceof DataSenderConfig );
+		// '-l'(optional)
+		assertTrue( "-l", Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.0.0" } ) instanceof DataReceiverConfig );
 
-		// one - fail
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", null } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.0.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "-1.0.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.-1.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.-1.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.0.-1" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "256.0.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.256.0.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.256.0" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "0.0.0.256" } ); }} );
+		assertThrown( "-l", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-l", "1", "O.O.O.O" } ); }} );
 	}
 
-	/**
-	 * test -h.
-	 */
-//	@Test
-	public void test_h() throws Exception {
-		assertEquals( null, Main.parseCommandLine( Main.getOptions(), new String[]{ "-l 1234" } ) );
+	@Test
+	public void testSender() throws Exception {
+		// Sender(port)
+		assertTrue( "Sender", Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "1" } ) instanceof DataSenderConfig );
+		assertTrue( "Sender", Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "65535" } ) instanceof DataSenderConfig );
+
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "-1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "0" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0", "65536" } ); }} );
+
+		// Sender(ip)
+		assertTrue( "Sender", Main.parseCommandLine( Main.getOptions(), new String[]{ "255.255.255.255", "1" } ) instanceof DataSenderConfig );
+
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ null, "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "-1.0.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.-1.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.-1.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.-1", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "256.0.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.256.0.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.256.0", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "0.0.0.256", "1" } ); }} );
+		assertThrown( "Sender", new D() { public void b() throws Exception { Main.parseCommandLine( Main.getOptions(), new String[]{ "O.O.O.O", "1" } ); }} );
+
 	}
 
 }
